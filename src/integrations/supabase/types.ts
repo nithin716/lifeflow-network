@@ -14,16 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      claims: {
+        Row: {
+          claimed_at: string
+          donor_id: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          donor_id: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          claimed_at?: string
+          donor_id?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "claims_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favourites: {
+        Row: {
+          blood_group: Database["public"]["Enums"]["blood_group"] | null
+          created_at: string
+          district: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          blood_group?: Database["public"]["Enums"]["blood_group"] | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          blood_group?: Database["public"]["Enums"]["blood_group"] | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favourites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at: string
+          district: string
+          full_name: string
+          id: string
+          phone: string
+          state: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at?: string
+          district: string
+          full_name: string
+          id?: string
+          phone: string
+          state: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blood_group?: Database["public"]["Enums"]["blood_group"]
+          created_at?: string
+          district?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      requests: {
+        Row: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at: string
+          district: string
+          expires_at: string
+          id: string
+          location_description: string | null
+          message: string | null
+          requester_id: string
+          requester_name: string
+          requester_phone: string
+          state: string
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+        }
+        Insert: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at?: string
+          district: string
+          expires_at?: string
+          id?: string
+          location_description?: string | null
+          message?: string | null
+          requester_id: string
+          requester_name: string
+          requester_phone: string
+          state: string
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Update: {
+          blood_group?: Database["public"]["Enums"]["blood_group"]
+          created_at?: string
+          district?: string
+          expires_at?: string
+          id?: string
+          location_description?: string | null
+          message?: string | null
+          requester_id?: string
+          requester_name?: string
+          requester_phone?: string
+          state?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      expire_old_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      blood_group: "O+" | "O-" | "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-"
+      request_status: "open" | "claimed" | "fulfilled" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +313,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      blood_group: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"],
+      request_status: ["open", "claimed", "fulfilled", "expired"],
+    },
   },
 } as const
