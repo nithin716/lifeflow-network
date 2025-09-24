@@ -2,41 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Blood Donation App Design System - Healthcare-focused palette 
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 27%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 27%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 27%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Medical Red Theme */
+    --primary: 346 84% 61%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 346 84% 71%;
+    
+    /* Soft Medical Grays */
+    --secondary: 210 17% 95%;
+    --secondary-foreground: 215 25% 27%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 17% 95%;
+    --muted-foreground: 215 13% 54%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 346 30% 95%;
+    --accent-foreground: 215 25% 27%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --border: 214 20% 91%;
+    --input: 214 20% 91%;
+    --ring: 346 84% 61%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --radius: 0.75rem;
 
-    --radius: 0.5rem;
+    /* Healthcare-specific design tokens */
+    --medical-red: 346 84% 61%;
+    --medical-red-light: 346 84% 71%;
+    --medical-red-dark: 346 84% 51%;
+    
+    --soft-gray: 210 17% 95%;
+    --soft-gray-dark: 215 13% 54%;
+    
+    --success-green: 142 76% 36%;
+    --warning-orange: 38 92% 50%;
+    
+    /* Gradients for healthcare feel */
+    --gradient-primary: linear-gradient(135deg, hsl(346 84% 61%), hsl(346 84% 71%));
+    --gradient-soft: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 17% 98%));
+    --gradient-accent: linear-gradient(135deg, hsl(346 30% 95%), hsl(346 40% 92%));
+    
+    /* Shadows for medical UI */
+    --shadow-soft: 0 2px 8px hsl(215 25% 27% / 0.08);
+    --shadow-medium: 0 4px 16px hsl(215 25% 27% / 0.12);
+    --shadow-strong: 0 8px 24px hsl(215 25% 27% / 0.16);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
 
