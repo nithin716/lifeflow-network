@@ -35,13 +35,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "claims_donor_id_fkey"
-            columns: ["donor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "claims_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
@@ -89,6 +82,7 @@ export type Database = {
           district: string
           full_name: string
           id: string
+          is_confirmed: boolean | null
           phone: string
           state: string
           updated_at: string
@@ -100,6 +94,7 @@ export type Database = {
           district: string
           full_name: string
           id?: string
+          is_confirmed?: boolean | null
           phone: string
           state: string
           updated_at?: string
@@ -111,6 +106,7 @@ export type Database = {
           district?: string
           full_name?: string
           id?: string
+          is_confirmed?: boolean | null
           phone?: string
           state?: string
           updated_at?: string
@@ -179,6 +175,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_user_email: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
       expire_old_requests: {
         Args: Record<PropertyKey, never>
         Returns: undefined
