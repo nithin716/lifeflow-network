@@ -186,7 +186,7 @@ export type Database = {
     }
     Enums: {
       blood_group: "O+" | "O-" | "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-"
-      request_status: "open" | "claimed" | "fulfilled" | "expired"
+      request_status: "open" | "claimed" | "fulfilled" | "expired" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -315,7 +315,7 @@ export const Constants = {
   public: {
     Enums: {
       blood_group: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"],
-      request_status: ["open", "claimed", "fulfilled", "expired"],
+      request_status: ["open", "claimed", "fulfilled", "expired", "cancelled"],
     },
   },
 } as const

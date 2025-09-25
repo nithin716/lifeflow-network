@@ -235,7 +235,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
     try {
       const { error } = await supabase
         .from('requests')
-        .update({ status: 'cancelled' })
+        .update({ status: 'cancelled' as any })
         .eq('id', requestId);
 
       if (error) throw error;
