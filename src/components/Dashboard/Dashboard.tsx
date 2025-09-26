@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 import { Droplets, Plus, Clock, MapPin, Phone, User, Heart, Copy, X } from "lucide-react";
 import { RequestBloodDialog } from "./RequestBloodDialog";
 
@@ -235,7 +236,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
     try {
       const { error } = await supabase
         .from('requests')
-        .update({ status: 'cancelled' as any })
+        .update({ status: 'cancelled' as Database['public']['Enums']['request_status'] })
         .eq('id', requestId);
 
       if (error) throw error;
