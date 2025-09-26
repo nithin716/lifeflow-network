@@ -234,13 +234,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
   const handleCancelRequest = async (requestId: string) => {
     try {
-      // First delete all claims for this request
-      await supabase
-        .from('claims')
-        .delete()
-        .eq('request_id', requestId);
-      
-      // Then delete the request itself
+      // Delete the request - claims will be deleted automatically due to CASCADE
       const { error } = await supabase
         .from('requests')
         .delete()
