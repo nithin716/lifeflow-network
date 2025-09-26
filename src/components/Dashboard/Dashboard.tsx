@@ -234,19 +234,27 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
   const handleCancelRequest = async (requestId: string) => {
     try {
+      // First delete all claims for this request
+      await supabase
+        .from('claims')
+        .delete()
+        .eq('request_id', requestId);
+      
+      // Then delete the request itself
       const { error } = await supabase
         .from('requests')
-        .update({ status: 'cancelled' as Database['public']['Enums']['request_status'] })
+        .delete()
         .eq('id', requestId);
 
       if (error) throw error;
 
       toast({
-        title: "Request Cancelled",
-        description: "Your blood request has been cancelled and removed from the feed.",
+        title: "Request Deleted",
+        description: "Your blood request has been permanently deleted.",
       });
       
       fetchMyRequests();
+      fetchRequests(); // Also refresh the main requests to remove from others' view
     } catch (error: any) {
       toast({
         variant: "destructive",

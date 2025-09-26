@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Droplets, Heart, Shield } from "lucide-react";
+import { Droplets, Heart, Shield, ArrowLeft } from "lucide-react";
 
 interface SignUpData {
   email: string;
@@ -25,12 +25,18 @@ interface SignInData {
   password: string;
 }
 
+interface ForgotPasswordData {
+  email: string;
+}
+
 export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { toast } = useToast();
   
   const signUpForm = useForm<SignUpData>();
   const signInForm = useForm<SignInData>();
+  const forgotPasswordForm = useForm<ForgotPasswordData>();
 
   const bloodGroups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
@@ -94,6 +100,33 @@ export const AuthForm = () => {
     }
   };
 
+  const onForgotPassword = async (data: ForgotPasswordData) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password Reset Email Sent!",
+        description: "Please check your email for password reset instructions.",
+      });
+      
+      setShowForgotPassword(false);
+      forgotPasswordForm.reset();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Password Reset Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -110,36 +143,28 @@ export const AuthForm = () => {
 
         <Card className="shadow-medium border-0">
           <CardContent className="p-6">
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="flex items-center gap-2">
-                  <Heart className="h-4 w-4" />
-                  Register
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
+            {showForgotPassword ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowForgotPassword(false)}
+                    className="p-0 h-auto"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <h3 className="text-lg font-semibold">Reset Password</h3>
+                </div>
+                
+                <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPassword)} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="reset-email">Email</Label>
                     <Input
-                      id="signin-email"
+                      id="reset-email"
                       type="email"
                       placeholder="your@email.com"
-                      {...signInForm.register("email", { required: true })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      {...signInForm.register("password", { required: true })}
+                      {...forgotPasswordForm.register("email", { required: true })}
                     />
                   </div>
                   <Button
@@ -147,10 +172,62 @@ export const AuthForm = () => {
                     className="w-full bg-gradient-primary hover:opacity-90"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {isLoading ? "Sending..." : "Send Reset Email"}
                   </Button>
                 </form>
-              </TabsContent>
+              </div>
+            ) : (
+              <Tabs defaultValue="signin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="signin" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Sign In
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    Register
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="signin">
+                  <form onSubmit={signInForm.handleSubmit(onSignIn)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email">Email</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        {...signInForm.register("email", { required: true })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password">Password</Label>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="••••••••"
+                        {...signInForm.register("password", { required: true })}
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-sm"
+                        onClick={() => setShowForgotPassword(true)}
+                      >
+                        Forgot Password?
+                      </Button>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-primary hover:opacity-90"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Signing in..." : "Sign In"}
+                    </Button>
+                  </form>
+                </TabsContent>
 
               <TabsContent value="signup">
                 <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
@@ -238,6 +315,7 @@ export const AuthForm = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
