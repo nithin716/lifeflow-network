@@ -104,14 +104,14 @@ export const AuthForm = () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) throw error;
 
       toast({
         title: "Password Reset Email Sent!",
-        description: "Please check your email for password reset instructions.",
+        description: "Please check your email and click the reset link to create a new password.",
       });
       
       setShowForgotPassword(false);
