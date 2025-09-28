@@ -378,11 +378,6 @@ export const Dashboard = ({ user }: DashboardProps) => {
                             <Clock className="h-4 w-4" />
                             {formatTimeRemaining(request.expires_at)}
                           </div>
-                          {claims.length > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {claims.length} Claimed
-                            </Badge>
-                          )}
                         </div>
                       </div>
 
