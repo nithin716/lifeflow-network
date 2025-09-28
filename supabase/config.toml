@@ -1,1 +1,4 @@
 project_id = "fbhidjyqctcsdfydyzlc"
+
+[functions.send-blood-request-notifications]
+verify_jwt = true

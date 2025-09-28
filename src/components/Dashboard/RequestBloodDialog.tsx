@@ -42,7 +42,7 @@ export const RequestBloodDialog = ({ isOpen, onClose, user, onSuccess }: Request
   const onSubmit = async (data: BloodRequestForm) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      const { data: newRequest, error } = await supabase
         .from('requests')
         .insert({
           requester_id: user.id,
@@ -53,9 +53,26 @@ export const RequestBloodDialog = ({ isOpen, onClose, user, onSuccess }: Request
           state: data.state,
           location_description: data.locationDescription,
           message: data.message,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send notifications to eligible users
+      try {
+        const { error: notificationError } = await supabase.functions.invoke('send-blood-request-notifications', {
+          body: { requestId: newRequest.id }
+        });
+
+        if (notificationError) {
+          console.error('Failed to send notifications:', notificationError);
+          // Don't throw error here as the request was created successfully
+        }
+      } catch (notificationError) {
+        console.error('Notification service error:', notificationError);
+        // Continue with success flow even if notifications fail
+      }
 
       toast({
         title: "Blood Request Submitted!",
