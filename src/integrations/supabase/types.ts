@@ -50,6 +50,42 @@ export type Database = {
           },
         ]
       }
+      contact_requests: {
+        Row: {
+          created_at: string
+          donor_id: string
+          expires_at: string
+          id: string
+          message: string | null
+          request_id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          donor_id: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          request_id: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          donor_id?: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          request_id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favourites: {
         Row: {
           blood_group: Database["public"]["Enums"]["blood_group"] | null
@@ -216,6 +252,18 @@ export type Database = {
       expire_old_requests: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_safe_profile_info: {
+        Args: { profile_user_id: string }
+        Returns: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          district: string
+          full_name: string
+          id: string
+          is_confirmed: boolean
+          state: string
+          user_id: string
+        }[]
       }
     }
     Enums: {

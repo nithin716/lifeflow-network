@@ -1,42 +1,32 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Droplets, Heart, Shield, ArrowLeft } from "lucide-react";
-
-interface SignUpData {
-  email: string;
-  password: string;
-  fullName: string;
-  phone: string;
-  district: string;
-  state: string;
-  bloodGroup: string;
-}
-
-interface SignInData {
-  email: string;
-  password: string;
-}
-
-interface ForgotPasswordData {
-  email: string;
-}
+import { signUpSchema, signInSchema, forgotPasswordSchema, type SignUpData, type SignInData, type ForgotPasswordData } from "@/lib/validations";
 
 export const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { toast } = useToast();
   
-  const signUpForm = useForm<SignUpData>();
-  const signInForm = useForm<SignInData>();
-  const forgotPasswordForm = useForm<ForgotPasswordData>();
+  const signUpForm = useForm<SignUpData>({
+    resolver: zodResolver(signUpSchema)
+  });
+  const signInForm = useForm<SignInData>({
+    resolver: zodResolver(signInSchema)
+  });
+  const forgotPasswordForm = useForm<ForgotPasswordData>({
+    resolver: zodResolver(forgotPasswordSchema)
+  });
 
   const bloodGroups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
@@ -49,11 +39,11 @@ export const AuthForm = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: data.fullName,
+            full_name: data.full_name,
             phone: data.phone,
             district: data.district,
             state: data.state,
-            blood_group: data.bloodGroup,
+            blood_group: data.blood_group,
           }
         }
       });
@@ -230,89 +220,128 @@ export const AuthForm = () => {
                 </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      placeholder="John Doe"
-                      {...signUpForm.register("fullName", { required: true })}
+                <Form {...signUpForm}>
+                  <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+                    <FormField
+                      control={signUpForm.control}
+                      name="full_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="your@email.com"
-                        {...signUpForm.register("email", { required: true })}
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={signUpForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="your@email.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signUpForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+1234567890" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        placeholder="+1234567890"
-                        {...signUpForm.register("phone", { required: true })}
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="district">District</Label>
-                      <Input
-                        id="district"
-                        placeholder="District"
-                        {...signUpForm.register("district", { required: true })}
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={signUpForm.control}
+                        name="district"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>District</FormLabel>
+                            <FormControl>
+                              <Input placeholder="District" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signUpForm.control}
+                        name="state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>State</FormLabel>
+                            <FormControl>
+                              <Input placeholder="State" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        placeholder="State"
-                        {...signUpForm.register("state", { required: true })}
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bloodGroup">Blood Group</Label>
-                    <Select onValueChange={(value) => signUpForm.setValue("bloodGroup", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your blood group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {bloodGroups.map((group) => (
-                          <SelectItem key={group} value={group}>
-                            {group}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      {...signUpForm.register("password", { required: true, minLength: 6 })}
+                    <FormField
+                      control={signUpForm.control}
+                      name="blood_group"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Blood Group</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select your blood group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {bloodGroups.map((group) => (
+                                <SelectItem key={group} value={group}>
+                                  {group}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-primary hover:opacity-90"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Creating account..." : "Create Account"}
-                  </Button>
-                </form>
+                    <FormField
+                      control={signUpForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-primary hover:opacity-90"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Creating account..." : "Create Account"}
+                    </Button>
+                  </form>
+                </Form>
               </TabsContent>
             </Tabs>
             )}
