@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
-import { Droplets, Plus, Clock, MapPin, Phone, User, Heart, Copy, X } from "lucide-react";
+import { Droplets, Plus, Clock, MapPin, Phone, User, Heart, Copy, X, MessageCircle } from "lucide-react";
 import { RequestBloodDialog } from "./RequestBloodDialog";
+import { DonorContactRequestDialog } from "./DonorContactRequestDialog";
 
 interface Profile {
   id: string;
@@ -19,7 +20,7 @@ interface Profile {
 interface BloodRequest {
   id: string;
   requester_name: string;
-  requester_phone: string;
+  requester_phone: string | null; // Can be null if contact not approved
   blood_group: string;
   district: string;
   location_description?: string;
@@ -30,11 +31,6 @@ interface BloodRequest {
   requester_id: string;
 }
 
-interface Claim {
-  id: string;
-  donor_id: string;
-  claimed_at: string;
-}
 
 interface DashboardProps {
   user: any;
@@ -44,10 +40,14 @@ export const Dashboard = ({ user }: DashboardProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [requests, setRequests] = useState<BloodRequest[]>([]);
   const [myRequests, setMyRequests] = useState<BloodRequest[]>([]);
-  const [requestClaims, setRequestClaims] = useState<{[key: string]: Claim[]}>({});
-  const [myRequestClaims, setMyRequestClaims] = useState<{[key: string]: Claim[]}>({});
-  const [claimedRequests, setClaimedRequests] = useState<Set<string>>(new Set());
+  const [contactRequestCounts, setContactRequestCounts] = useState<{[key: string]: number}>({});
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [contactRequestDialog, setContactRequestDialog] = useState<{
+    open: boolean;
+    requestId: string;
+    requesterId: string;
+    requesterName: string;
+  }>({ open: false, requestId: '', requesterId: '', requesterName: '' });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -74,24 +74,25 @@ export const Dashboard = ({ user }: DashboardProps) => {
         )
         .subscribe();
 
-      const claimsChannel = supabase
-        .channel('claims-changes')
+      const contactRequestsChannel = supabase
+        .channel('contact-requests-changes')
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
-            table: 'claims',
+            table: 'contact_requests',
           },
           () => {
-            fetchClaims();
+            fetchRequests();
+            fetchContactRequestCounts();
           }
         )
         .subscribe();
 
       return () => {
         supabase.removeChannel(requestsChannel);
-        supabase.removeChannel(claimsChannel);
+        supabase.removeChannel(contactRequestsChannel);
       };
     }
   }, [user]);
@@ -117,17 +118,15 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
   const fetchRequests = async () => {
     try {
-      const { data, error } = await supabase
-        .from('requests')
-        .select('*')
-        .eq('status', 'open')
-        .gt('expires_at', new Date().toISOString())
-        .neq('requester_id', user.id) // Exclude user's own requests
-        .order('created_at', { ascending: false });
+      // Use the secure RPC function that hides phone numbers unless approved
+      const { data, error } = await supabase.rpc('get_safe_requests');
 
       if (error) throw error;
-      setRequests(data || []);
-      await fetchClaims();
+      
+      // Filter out user's own requests
+      const filteredRequests = (data || []).filter((req: BloodRequest) => req.requester_id !== user.id);
+      setRequests(filteredRequests);
+      await fetchContactRequestCounts();
     } catch (error: any) {
       console.error('Error fetching requests:', error);
     } finally {
@@ -137,99 +136,70 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
   const fetchMyRequests = async () => {
     try {
-      const { data, error } = await supabase
-        .from('requests')
-        .select('*')
-        .eq('requester_id', user.id)
-        .order('created_at', { ascending: false });
+      // Use the secure RPC function for consistency
+      const { data, error } = await supabase.rpc('get_safe_requests');
 
       if (error) throw error;
-      setMyRequests(data || []);
-      await fetchMyRequestClaims();
+      
+      // Filter to only user's own requests
+      const myReqs = (data || []).filter((req: BloodRequest) => req.requester_id === user.id);
+      setMyRequests(myReqs);
+      await fetchMyRequestContactCounts();
     } catch (error: any) {
       console.error('Error fetching my requests:', error);
     }
   };
 
-  const fetchClaims = async () => {
+  const fetchContactRequestCounts = async () => {
     try {
       const { data, error } = await supabase
-        .from('claims')
-        .select('*');
+        .from('contact_requests')
+        .select('request_id, status')
+        .eq('donor_id', user.id);
 
       if (error) throw error;
       
-      const claimsMap: {[key: string]: Claim[]} = {};
-      const userClaimedSet = new Set<string>();
-      
-      data?.forEach(claim => {
-        if (!claimsMap[claim.request_id]) {
-          claimsMap[claim.request_id] = [];
-        }
-        claimsMap[claim.request_id].push(claim);
-        
-        if (claim.donor_id === user.id) {
-          userClaimedSet.add(claim.request_id);
-        }
+      const counts: {[key: string]: number} = {};
+      data?.forEach(cr => {
+        counts[cr.request_id] = (counts[cr.request_id] || 0) + 1;
       });
       
-      setRequestClaims(claimsMap);
-      setClaimedRequests(userClaimedSet);
+      setContactRequestCounts(counts);
     } catch (error: any) {
-      console.error('Error fetching claims:', error);
+      console.error('Error fetching contact request counts:', error);
     }
   };
 
-  const fetchMyRequestClaims = async () => {
+  const fetchMyRequestContactCounts = async () => {
     try {
       const myRequestIds = myRequests.map(req => req.id);
       if (myRequestIds.length === 0) return;
 
       const { data, error } = await supabase
-        .from('claims')
-        .select('*')
+        .from('contact_requests')
+        .select('request_id, status')
         .in('request_id', myRequestIds);
 
       if (error) throw error;
       
-      const claimsMap: {[key: string]: Claim[]} = {};
-      data?.forEach(claim => {
-        if (!claimsMap[claim.request_id]) {
-          claimsMap[claim.request_id] = [];
-        }
-        claimsMap[claim.request_id].push(claim);
+      const counts: {[key: string]: number} = {};
+      data?.forEach(cr => {
+        counts[cr.request_id] = (counts[cr.request_id] || 0) + 1;
       });
       
-      setMyRequestClaims(claimsMap);
+      setContactRequestCounts(counts);
     } catch (error: any) {
-      console.error('Error fetching my request claims:', error);
+      console.error('Error fetching my request contact counts:', error);
     }
   };
 
-  const handleClaimRequest = async (requestId: string) => {
-    try {
-      const { error } = await supabase
-        .from('claims')
-        .insert({
-          request_id: requestId,
-          donor_id: user.id,
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Request Claimed!",
-        description: "You can now see the requester's contact details.",
-      });
-      
-      fetchClaims();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to claim request. You may have already claimed this request.",
-      });
-    }
+  const handleRequestContact = (requestId: string, requesterId: string, requesterName: string) => {
+    setContactRequestDialog({
+      open: true,
+      requestId,
+      requesterId,
+      requesterName
+    });
   };
 
   const handleCancelRequest = async (requestId: string) => {
@@ -353,9 +323,6 @@ export const Dashboard = ({ user }: DashboardProps) => {
           ) : (
             <div className="grid gap-4">
               {requests.map((request) => {
-                const claims = requestClaims[request.id] || [];
-                const isClaimed = claimedRequests.has(request.id);
-                
                 return (
                   <Card key={request.id} className="border-0 shadow-soft hover:shadow-medium transition-shadow">
                     <CardContent className="p-6">
@@ -393,18 +360,18 @@ export const Dashboard = ({ user }: DashboardProps) => {
                         )}
                       </div>
 
-                      {isClaimed ? (
+                      {request.requester_phone ? (
                         <div className="space-y-3">
                           <div className="bg-success/10 border border-success/20 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-success">Contact Details</p>
+                                <p className="font-medium text-success">Contact Approved</p>
                                 <p className="text-sm text-muted-foreground">Phone: {request.requester_phone}</p>
                               </div>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => copyToClipboard(request.requester_phone)}
+                                onClick={() => copyToClipboard(request.requester_phone!)}
                                 className="flex items-center gap-2"
                               >
                                 <Copy className="h-4 w-4" />
@@ -415,11 +382,11 @@ export const Dashboard = ({ user }: DashboardProps) => {
                         </div>
                       ) : (
                         <Button
-                          onClick={() => handleClaimRequest(request.id)}
+                          onClick={() => handleRequestContact(request.id, request.requester_id, request.requester_name)}
                           className="w-full bg-gradient-primary hover:opacity-90"
                         >
-                          <Phone className="h-4 w-4 mr-2" />
-                          I will help
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Request Contact to Help
                         </Button>
                       )}
                     </CardContent>
@@ -446,7 +413,7 @@ export const Dashboard = ({ user }: DashboardProps) => {
           ) : (
             <div className="grid gap-4">
               {myRequests.filter(req => req.status === 'open').map((request) => {
-                const claims = myRequestClaims[request.id] || [];
+                const contactCount = contactRequestCounts[request.id] || 0;
                 
                 return (
                   <Card key={request.id} className="border-0 shadow-soft">
@@ -470,9 +437,9 @@ export const Dashboard = ({ user }: DashboardProps) => {
                             <Clock className="h-4 w-4" />
                             {formatTimeRemaining(request.expires_at)}
                           </div>
-                          {claims.length > 0 && (
+                          {contactCount > 0 && (
                             <Badge variant="secondary" className="bg-success text-white">
-                              {claims.length} Claimed
+                              {contactCount} Contact Request{contactCount !== 1 ? 's' : ''}
                             </Badge>
                           )}
                         </div>
@@ -511,7 +478,18 @@ export const Dashboard = ({ user }: DashboardProps) => {
         isOpen={isRequestDialogOpen}
         onClose={() => setIsRequestDialogOpen(false)}
         user={user}
-        onSuccess={fetchMyRequests}
+        onSuccess={() => {
+          fetchMyRequests();
+          fetchRequests();
+        }}
+      />
+
+      <DonorContactRequestDialog
+        open={contactRequestDialog.open}
+        onOpenChange={(open) => setContactRequestDialog({ ...contactRequestDialog, open })}
+        requestId={contactRequestDialog.requestId}
+        requesterId={contactRequestDialog.requesterId}
+        requesterName={contactRequestDialog.requesterName}
       />
     </div>
   );

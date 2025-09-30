@@ -273,6 +273,24 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_safe_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          blood_group: Database["public"]["Enums"]["blood_group"]
+          created_at: string
+          district: string
+          expires_at: string
+          id: string
+          location_description: string
+          message: string
+          requester_id: string
+          requester_name: string
+          requester_phone: string
+          state: string
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       blood_group: "O+" | "O-" | "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-"
