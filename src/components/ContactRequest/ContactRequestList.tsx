@@ -21,7 +21,7 @@ interface ContactRequest {
     requester_name: string;
     requester_phone: string;
   };
-  profiles?: {
+  requester_profile?: {
     full_name: string;
     phone: string;
   };
@@ -42,14 +42,36 @@ export const ContactRequestList = () => {
         .from('contact_requests')
         .select(`
           *,
-          requests!inner(blood_group, district, requester_name, requester_phone),
-          profiles!contact_requests_requester_id_fkey(full_name, phone)
+          requests!contact_requests_request_id_fkey(
+            blood_group,
+            district,
+            requester_name,
+            requester_phone
+          )
         `)
         .eq('donor_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+
+      // Fetch requester profiles separately
+      if (data && data.length > 0) {
+        const requesterIds = data.map(r => r.requester_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, phone')
+          .in('user_id', requesterIds);
+
+        // Merge profiles with requests
+        const enrichedData = data.map(request => ({
+          ...request,
+          requester_profile: profilesData?.find(p => p.user_id === request.requester_id)
+        }));
+
+        setRequests(enrichedData as any);
+      } else {
+        setRequests([]);
+      }
     } catch (error) {
       console.error('Error fetching contact requests:', error);
       toast({
@@ -116,7 +138,7 @@ export const ContactRequestList = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
-                Blood Request from {request.profiles?.full_name || 'Unknown'}
+                Blood Request from {request.requester_profile?.full_name || 'Unknown'}
               </CardTitle>
               <Badge 
                 variant={
