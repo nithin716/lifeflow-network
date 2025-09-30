@@ -23,7 +23,6 @@ interface ContactRequest {
   };
   requester_profile?: {
     full_name: string;
-    phone: string;
   };
 }
 
@@ -54,12 +53,12 @@ export const ContactRequestList = () => {
 
       if (error) throw error;
 
-      // Fetch requester profiles separately
+      // Fetch requester profiles separately (only non-sensitive fields)
       if (data && data.length > 0) {
         const requesterIds = data.map(r => r.requester_id);
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('user_id, full_name, phone')
+          .select('user_id, full_name')
           .in('user_id', requesterIds);
 
         // Merge profiles with requests
